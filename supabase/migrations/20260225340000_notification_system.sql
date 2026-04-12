@@ -1,4 +1,4 @@
--- NOTIFICATION SYSTEM FOR SAMS
+-- NOTIFICATION SYSTEM
 -- This system handles alerts for chat requests, grades, and system updates.
 
 -- 1. Notifications Table

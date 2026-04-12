@@ -1,14 +1,38 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Loader2, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+
+const DEPT_NAME_MIN = 10;
+const DEPT_DESC_MIN = 10;
+/** Letters (including Unicode), spaces, hyphen, apostrophe — no digits. */
+const DEPT_NAME_PATTERN = /^[\p{L}\s''\-]+$/u;
+
+function validateDepartmentFields(name: string, description: string): string | null {
+    const n = name.trim();
+    const d = description.trim();
+    if (n.length < DEPT_NAME_MIN) {
+        return `Department name must be at least ${DEPT_NAME_MIN} characters.`;
+    }
+    if (/\d/.test(n)) {
+        return 'Department name cannot contain numbers.';
+    }
+    if (!DEPT_NAME_PATTERN.test(n)) {
+        return 'Department name may only contain letters, spaces, hyphens, and apostrophes.';
+    }
+    if (d.length < DEPT_DESC_MIN) {
+        return `Description must be at least ${DEPT_DESC_MIN} characters.`;
+    }
+    return null;
+}
 
 const DepartmentManagement = () => {
     const [departments, setDepartments] = useState<any[]>([]);
@@ -41,9 +65,14 @@ const DepartmentManagement = () => {
 
     const handleAddDept = async (e: React.FormEvent) => {
         e.preventDefault();
+        const err = validateDepartmentFields(newDeptName, newDeptDesc);
+        if (err) {
+            toast({ title: 'Invalid input', description: err, variant: 'destructive' });
+            return;
+        }
         setIsAdding(true);
         try {
-            const { error } = await (supabase.from('departments' as any).insert([{ name: newDeptName, description: newDeptDesc } as any]) as any);
+            const { error } = await (supabase.from('departments' as any).insert([{ name: newDeptName.trim(), description: newDeptDesc.trim() } as any]) as any);
             if (error) throw error;
             toast({ title: 'Success', description: 'Department created.' });
             setDialogOpen(false);
@@ -51,7 +80,11 @@ const DepartmentManagement = () => {
             setNewDeptDesc('');
             fetchDepartments();
         } catch (error: any) {
-            toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+            const msg = String(error?.message ?? '');
+            const desc = msg.includes('row-level security')
+                ? 'Only an administrator can create departments. If you are an admin, apply pending Supabase migrations (departments RLS) or ask your database admin.'
+                : msg;
+            toast({ title: 'Failed', description: desc, variant: 'destructive' });
         } finally {
             setIsAdding(false);
         }
@@ -59,18 +92,28 @@ const DepartmentManagement = () => {
 
     const handleEditDept = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!editDept) return;
+        const err = validateDepartmentFields(editDept.name, editDept.description ?? '');
+        if (err) {
+            toast({ title: 'Invalid input', description: err, variant: 'destructive' });
+            return;
+        }
         setIsUpdating(true);
         try {
             const { error } = await supabase.from('departments' as any).update({
-                name: editDept.name,
-                description: editDept.description
+                name: editDept.name.trim(),
+                description: (editDept.description ?? '').trim()
             }).eq('id', editDept.id);
             if (error) throw error;
             toast({ title: 'Success', description: 'Department updated.' });
             setEditDialogOpen(false);
             fetchDepartments();
         } catch (error: any) {
-            toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+            const msg = String(error?.message ?? '');
+            const desc = msg.includes('row-level security')
+                ? 'Only an administrator can update departments. Apply pending Supabase migrations if this persists.'
+                : msg;
+            toast({ title: 'Failed', description: desc, variant: 'destructive' });
         } finally {
             setIsUpdating(false);
         }
@@ -84,7 +127,11 @@ const DepartmentManagement = () => {
             toast({ title: 'Deleted', description: 'Department removed.' });
             fetchDepartments();
         } catch (error: any) {
-            toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+            const msg = String(error?.message ?? '');
+            const desc = msg.includes('row-level security')
+                ? 'Only an administrator can delete departments. Apply pending Supabase migrations if this persists.'
+                : msg;
+            toast({ title: 'Delete failed', description: desc, variant: 'destructive' });
         }
     };
 
@@ -96,7 +143,16 @@ const DepartmentManagement = () => {
                         <h1 className="text-2xl font-bold font-heading">Departments</h1>
                         <p className="text-muted-foreground">Manage academy faculty and departments</p>
                     </div>
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <Dialog
+                        open={dialogOpen}
+                        onOpenChange={(open) => {
+                            setDialogOpen(open);
+                            if (!open) {
+                                setNewDeptName('');
+                                setNewDeptDesc('');
+                            }
+                        }}
+                    >
                         <DialogTrigger asChild>
                             <Button className="gradient-primary">
                                 <Plus className="mr-2 h-4 w-4" /> Add Department
@@ -108,12 +164,34 @@ const DepartmentManagement = () => {
                             </DialogHeader>
                             <form onSubmit={handleAddDept} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Department Name</Label>
-                                    <Input value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)} placeholder="e.g. Computer Science" required />
+                                    <Label>
+                                        Department Name{' '}
+                                        <span className="text-[10px] font-normal text-muted-foreground">
+                                            (letters only, no numbers, min {DEPT_NAME_MIN} characters)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        value={newDeptName}
+                                        onChange={(e) => setNewDeptName(e.target.value.replace(/[0-9]/g, ''))}
+                                        placeholder="e.g. Computer Science"
+                                        minLength={DEPT_NAME_MIN}
+                                        required
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Input value={newDeptDesc} onChange={(e) => setNewDeptDesc(e.target.value)} placeholder="e.g. Faculty of Info Tech" />
+                                    <Label>
+                                        Description{' '}
+                                        <span className="text-[10px] font-normal text-muted-foreground">(min {DEPT_DESC_MIN} characters)</span>
+                                    </Label>
+                                    <Textarea
+                                        value={newDeptDesc}
+                                        onChange={(e) => setNewDeptDesc(e.target.value)}
+                                        placeholder="e.g. Faculty of Information Technology"
+                                        minLength={DEPT_DESC_MIN}
+                                        rows={3}
+                                        className="resize-y min-h-[72px]"
+                                        required
+                                    />
                                 </div>
                                 <DialogFooter>
                                     <Button type="submit" disabled={isAdding}>
@@ -173,12 +251,32 @@ const DepartmentManagement = () => {
                         {editDept && (
                             <form onSubmit={handleEditDept} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Department Name</Label>
-                                    <Input value={editDept.name} onChange={(e) => setEditDept({ ...editDept, name: e.target.value })} required />
+                                    <Label>
+                                        Department Name{' '}
+                                        <span className="text-[10px] font-normal text-muted-foreground">
+                                            (letters only, no numbers, min {DEPT_NAME_MIN} characters)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        value={editDept.name}
+                                        onChange={(e) => setEditDept({ ...editDept, name: e.target.value.replace(/[0-9]/g, '') })}
+                                        minLength={DEPT_NAME_MIN}
+                                        required
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Input value={editDept.description} onChange={(e) => setEditDept({ ...editDept, description: e.target.value })} />
+                                    <Label>
+                                        Description{' '}
+                                        <span className="text-[10px] font-normal text-muted-foreground">(min {DEPT_DESC_MIN} characters)</span>
+                                    </Label>
+                                    <Textarea
+                                        value={editDept.description ?? ''}
+                                        onChange={(e) => setEditDept({ ...editDept, description: e.target.value })}
+                                        minLength={DEPT_DESC_MIN}
+                                        rows={3}
+                                        className="resize-y min-h-[72px]"
+                                        required
+                                    />
                                 </div>
                                 <DialogFooter>
                                     <Button type="submit" disabled={isUpdating}>

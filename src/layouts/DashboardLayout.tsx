@@ -36,6 +36,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     '/events': 'Academy Events',
     '/attendance': 'Attendance',
     '/assignments': 'Assignments',
+    '/exams': 'Exams',
     '/grading': 'Grading',
     '/results': 'My Results',
     '/communication': 'Common Room',
@@ -45,7 +46,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     '/admin/enrollments': 'Enrollments',
     '/admin/users': 'Users',
     '/admin/security': 'Security',
-    '/analytics': 'Reports',
+    
     '/profile': 'Profile',
   };
 
@@ -69,7 +70,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-[#E2F4F8] bg-white px-4 py-4 lg:px-6">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-[0.6px] text-[#6B7280]">SAMS</p>
               <h2 className="truncate font-heading text-[26px] font-bold leading-tight tracking-[-0.3px] text-[#1B2B4B]">
                 {currentTitle}
               </h2>

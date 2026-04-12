@@ -367,8 +367,8 @@ const Timetable = () => {
                                             <CardContent className="p-3">
                                                 <div className="flex flex-col gap-2">
                                                     <div className="flex items-center justify-between">
-                                                  <span className="text-[10px] font-black text-primary uppercase">{slot.subjects.code}</span>
-                                                  {(role === 'admin' || (role === 'lecturer' && slot.subjects.lecturer_id === user?.id)) && (
+                                                  <span className="text-[10px] font-black text-primary uppercase">{slot.subjects?.code || 'N/A'}</span>
+                                                  {(role === 'admin' || (role === 'lecturer' && slot.subjects?.lecturer_id === user?.id)) && (
                                                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 <button
                                                                     onClick={() => handleEditSlot(slot)}
@@ -385,7 +385,7 @@ const Timetable = () => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <h4 className="font-bold text-xs line-clamp-2 leading-tight">{slot.subjects.name}</h4>
+                                                    <h4 className="font-bold text-xs line-clamp-2 leading-tight">{slot.subjects?.name || 'Unassigned'}</h4>
                                                     <div className="flex flex-col gap-1 mt-1">
                                                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                                             <Clock className="h-3 w-3" />

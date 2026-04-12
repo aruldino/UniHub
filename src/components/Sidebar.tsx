@@ -6,7 +6,7 @@ import {
   Calendar as CalendarIcon, BarChart3, Bell, LogOut,
   Settings, Layers, BookOpenCheck,
   Award, Calculator, Shield, ShieldCheck, UserPlus, MessageSquare,
-  ChevronLeft, ChevronDown, UserCircle
+  ChevronLeft, ChevronDown, UserCircle, GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
   { label: 'Academy Events', path: '/events', icon: CalendarIcon, roles: ['admin', 'lecturer', 'student'] },
   { label: 'Attendance', path: '/attendance', icon: ClipboardCheck, roles: ['lecturer', 'student'] },
   { label: 'Assignments', path: '/assignments', icon: FileText, roles: ['lecturer', 'student'] },
+  { label: 'Exams', path: '/exams', icon: GraduationCap, roles: ['lecturer', 'student'] },
   { label: 'Grading', path: '/grading', icon: Calculator, roles: ['lecturer'] },
   { label: 'My Results', path: '/results', icon: Award, roles: ['student'] },
   { label: 'Common Room', path: '/communication', icon: Bell, roles: ['admin', 'lecturer', 'student'] },
@@ -42,7 +43,7 @@ const navItems: NavItem[] = [
   { label: 'Enrollments', path: '/admin/enrollments', icon: UserPlus, roles: ['admin'] },
   { label: 'Users', path: '/admin/users', icon: Settings, roles: ['admin', 'lecturer'], permission: 'manage:users' },
   { label: 'Security', path: '/admin/security', icon: ShieldCheck, roles: ['admin', 'lecturer'], permission: 'manage:security' },
-  { label: 'Reports', path: '/analytics', icon: BarChart3, roles: ['admin', 'lecturer'], permission: 'view:reports' },
+  
 ];
 
 function roleBadgeVariant(role: string | null): 'roleAdmin' | 'roleLecturer' | 'roleStudent' | 'outline' {
@@ -92,7 +93,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }: SidebarProps) => {
               <img src="/logo.png" alt="" className="h-9 w-9 shrink-0 object-contain" />
               <div className="min-w-0 flex-1">
                 <h1 className="truncate font-heading text-base font-bold text-[#1B2B4B]">UniHub</h1>
-                <p className="truncate text-xs text-[#6B7280]">SAMS · Northern UNI</p>
+                <p className="truncate text-xs text-[#6B7280]">Northern UNI</p>
               </div>
             </>
           )}

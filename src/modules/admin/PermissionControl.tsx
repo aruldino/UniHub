@@ -133,7 +133,9 @@ const PermissionControl = () => {
         }
     };
 
-    const modules = Array.from(new Set(permissions.map(p => p.module)));
+    const modules = Array.from(new Set(permissions.map(p => p.module))).filter(
+        (m) => m !== 'finance'
+    );
 
     return (
         <DashboardLayout>

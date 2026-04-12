@@ -34,7 +34,7 @@ USING (public.is_admin());
 -- 5. Ensure the profiles -> batches link is optimized if it exists
 -- The Batches.tsx code does: .select('*, profiles(count)')
 -- This implies batch is used in profiles.
--- Many parts of SAMS use 'batch' as a TEXT field currently.
+-- Many parts of the app use 'batch' as a TEXT field currently.
 -- We keep it as TEXT for compatibility but we need to make sure 
 -- RLS on profiles doesn't block the count.
 

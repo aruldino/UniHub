@@ -35,6 +35,40 @@ export async function fetchGroupMemberStatus(groupId: string, userId: string) {
 export async function sendJoinRequest(groupId: string, userId: string) {
   const { error } = await supabase.from('group_join_requests').insert([{ group_id: groupId, user_id: userId }]);
   if (error) throw error;
+
+  try {
+    const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).maybeSingle();
+    const { data: requester } = await supabase.from('profiles').select('full_name').eq('user_id', userId).maybeSingle();
+    
+    const { data: admins, error: adminError } = await supabase.from('group_members')
+      .select('user_id')
+      .eq('group_id', groupId)
+      .eq('role', 'admin');
+    
+    if (adminError) {
+      console.error('[sendJoinRequest] Error fetching admins:', adminError);
+    }
+    
+    if (admins?.length) {
+      const notifications = admins.map(admin => ({
+        user_id: admin.user_id,
+        type: 'group_join_request',
+        title: 'New Join Request',
+        message: `${requester?.full_name || 'Someone'} wants to join "${group?.name || 'the group'}"`,
+        link: '/groups',
+        is_read: false
+      }));
+      
+      const { error: notifError } = await supabase.from('notifications').insert(notifications);
+      if (notifError) {
+        console.error('[sendJoinRequest] Error inserting notifications:', notifError);
+      } else {
+        console.log('[sendJoinRequest] Notifications sent to', admins.length, 'admins');
+      }
+    }
+  } catch (err) {
+    console.error('[sendJoinRequest] Error:', err);
+  }
 }
 
 export async function cancelJoinRequest(groupId: string, userId: string) {

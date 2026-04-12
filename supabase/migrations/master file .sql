@@ -415,7 +415,7 @@ USING (deleted_at IS NULL OR public.has_role(auth.uid(), 'admin'));
 
 
 -- FILE: 20260225140000_enterprise_schema.sql
--- ENTERPRISE SCHEMA FOR SAMS (Smart Academic Management System)
+-- ENTERPRISE SCHEMA (Smart Academic Management System)
 
 -- 1. Departments Table
 CREATE TABLE IF NOT EXISTS public.departments (
@@ -530,7 +530,7 @@ $$;
 
 
 -- FILE: 20260225150000_grading_system.sql
--- GRADING & GPA SYSTEM FOR SAMS
+-- GRADING & GPA SYSTEM
 
 -- 1. Create Grades Table
 CREATE TABLE IF NOT EXISTS public.grades (
@@ -1889,7 +1889,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_contacts;
 
 
 -- FILE: 20260225300000_events_system.sql
--- EVENTS SYSTEM FOR SAMS
+-- EVENTS SYSTEM
 -- 1. Ensure Events Table and Columns exist
 CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -2193,7 +2193,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS address TEXT;
 
 
 -- FILE: 20260225340000_notification_system.sql
--- NOTIFICATION SYSTEM FOR SAMS
+-- NOTIFICATION SYSTEM
 -- This system handles alerts for chat requests, grades, and system updates.
 
 -- 1. Notifications Table
@@ -3008,7 +3008,7 @@ END $$;
 
 
 -- FILE: 20260226200000_atomic_social_fix.sql
--- SAMS REPAIR 2026-02-26: FINAL ATOMIC FIX
+-- Social / messaging repair 2026-02-26: final atomic fix
 -- This script fixes the 400 (POST error), 500 (Recursion), and Notifications.
 
 -- 1. FIX NOTIFICATIONS SCHEMA FIRST (Triggers depend on this)
@@ -3376,7 +3376,7 @@ USING (public.is_admin());
 -- 5. Ensure the profiles -> batches link is optimized if it exists
 -- The Batches.tsx code does: .select('*, profiles(count)')
 -- This implies batch is used in profiles.
--- Many parts of SAMS use 'batch' as a TEXT field currently.
+-- Many parts of the app use 'batch' as a TEXT field currently.
 -- We keep it as TEXT for compatibility but we need to make sure 
 -- RLS on profiles doesn't block the count.
 

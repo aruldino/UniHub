@@ -1,4 +1,4 @@
--- EVENTS SYSTEM FOR SAMS
+-- EVENTS SYSTEM
 -- 1. Ensure Events Table and Columns exist
 CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

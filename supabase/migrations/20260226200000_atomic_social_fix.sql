@@ -1,4 +1,4 @@
--- SAMS REPAIR 2026-02-26: FINAL ATOMIC FIX
+-- Social / messaging repair 2026-02-26: final atomic fix
 -- This script fixes the 400 (POST error), 500 (Recursion), and Notifications.
 
 -- 1. FIX NOTIFICATIONS SCHEMA FIRST (Triggers depend on this)

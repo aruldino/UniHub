@@ -246,12 +246,12 @@ const AuditLogs = () => {
                                     filteredLogs.map((log) => (
                                         <TableRow key={log.id} className="hover:bg-muted/10">
                                             <TableCell className="pl-6 font-mono text-xs">
-                                                {format(new Date(log.created_at), 'MMM d, HH:mm:ss.SSS')}
+                                                {log.created_at ? format(new Date(log.created_at), 'MMM d, HH:mm:ss.SSS') : 'N/A'}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-sm tracking-tight">{log.user_email || 'System'}</span>
-                                                    <span className="text-[10px] text-muted-foreground uppercase font-black">{log.user_role}</span>
+                                                    <span className="text-[10px] text-muted-foreground uppercase font-black">{log.user_role || 'N/A'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -259,7 +259,7 @@ const AuditLogs = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="bg-primary/5 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase">{log.table_name}</span>
+                                                    <span className="bg-primary/5 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase">{log.table_name || 'N/A'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -281,7 +281,7 @@ const AuditLogs = () => {
                                                                 <Info className="h-5 w-5 text-primary" /> Record Change Detail
                                                             </DialogTitle>
                                                             <DialogDescription>
-                                                                Complete data snapshot for record {log.record_id}
+                                                                Complete data snapshot for record {log.record_id || 'N/A'}
                                                             </DialogDescription>
                                                         </DialogHeader>
 
@@ -290,17 +290,17 @@ const AuditLogs = () => {
                                                                 <div className="bg-muted/30 p-4 rounded-xl space-y-2">
                                                                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Metadata</p>
                                                                     <div className="space-y-1 text-sm">
-                                                                        <p><span className="text-muted-foreground">ID:</span> {log.id}</p>
-                                                                        <p><span className="text-muted-foreground">Table:</span> {log.table_name}</p>
-                                                                        <p><span className="text-muted-foreground">Log Time:</span> {format(new Date(log.created_at), 'PPPpppp')}</p>
+                                                                        <p><span className="text-muted-foreground">ID:</span> {log.id || 'N/A'}</p>
+                                                                        <p><span className="text-muted-foreground">Table:</span> {log.table_name || 'N/A'}</p>
+                                                                        <p><span className="text-muted-foreground">Log Time:</span> {log.created_at ? format(new Date(log.created_at), 'PPPppp') : 'N/A'}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="bg-muted/30 p-4 rounded-xl space-y-2">
                                                                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Principal Context</p>
                                                                     <div className="space-y-1 text-sm">
-                                                                        <p><span className="text-muted-foreground">User:</span> {log.user_email}</p>
-                                                                        <p><span className="text-muted-foreground">Role:</span> {log.user_role}</p>
-                                                                        <p><span className="text-muted-foreground">IP:</span> {log.ip_address}</p>
+                                                                        <p><span className="text-muted-foreground">User:</span> {log.user_email || 'System'}</p>
+                                                                        <p><span className="text-muted-foreground">Role:</span> {log.user_role || 'N/A'}</p>
+                                                                        <p><span className="text-muted-foreground">IP:</span> {log.ip_address || 'Localhost'}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -17,6 +18,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 
 const CATEGORIES = ['General', 'Academic', 'Sports', 'Cultural', 'Workshop', 'Career'];
+
+/** Local `datetime-local` value (minute precision) for `min` / comparisons. */
+function toDatetimeLocalValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 const Events = () => {
   const { user, role } = useAuth();
@@ -65,12 +72,34 @@ const Events = () => {
 
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const title = form.title.trim();
+    const description = form.description.trim();
+    if (title.length < 10) {
+      toast({ title: 'Invalid title', description: 'Event title must be at least 10 characters.', variant: 'destructive' });
+      return;
+    }
+    if (description.length < 10) {
+      toast({ title: 'Invalid description', description: 'Description must be at least 10 characters.', variant: 'destructive' });
+      return;
+    }
+
+    const eventDt = new Date(form.event_date);
+    if (Number.isNaN(eventDt.getTime())) {
+      toast({ title: 'Invalid date', description: 'Please choose a valid date and time.', variant: 'destructive' });
+      return;
+    }
+    if (eventDt.getTime() <= Date.now()) {
+      toast({ title: 'Invalid date', description: 'Event date and time must be in the future.', variant: 'destructive' });
+      return;
+    }
+
     setIsActionLoading(true);
     try {
       const eventData = {
-        title: form.title,
-        description: form.description,
-        event_date: new Date(form.event_date).toISOString(),
+        title,
+        description,
+        event_date: eventDt.toISOString(),
         location: form.location,
         category: form.category,
         image_url: form.image_url,
@@ -113,10 +142,14 @@ const Events = () => {
 
   const openEditEvent = (event: any) => {
     setEditingEvent(event);
+    const existing = new Date(event.event_date);
+    const rawSlice = typeof event.event_date === 'string' ? event.event_date.slice(0, 16) : '';
+    const eventDateField =
+      !Number.isNaN(existing.getTime()) && existing.getTime() > Date.now() ? rawSlice : '';
     setForm({
       title: event.title,
       description: event.description || '',
-      event_date: event.event_date.slice(0, 16),
+      event_date: eventDateField,
       location: event.location || '',
       category: event.category || 'General',
       image_url: event.image_url || '',
@@ -142,7 +175,16 @@ const Events = () => {
           </div>
 
           {role === 'admin' && (
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <Dialog
+              open={isCreateOpen}
+              onOpenChange={(open) => {
+                setIsCreateOpen(open);
+                if (!open) {
+                  setEditingEvent(null);
+                  setForm({ title: '', description: '', event_date: '', location: '', category: 'General', image_url: '', is_published: true });
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="gradient-primary">
                   <Plus className="mr-2 h-4 w-4" /> Schedule Event
@@ -155,28 +197,34 @@ const Events = () => {
                 </DialogHeader>
                 <form onSubmit={handleSaveEvent} className="space-y-4 py-2">
                   <div className="space-y-2">
-                    <Label>Event Title</Label>
+                    <Label>Event Title <span className="text-[10px] font-normal text-muted-foreground">(min 10 characters)</span></Label>
                     <Input
                       placeholder="e.g. Annual Sports Meet"
                       value={form.title}
                       onChange={e => setForm({ ...form, title: e.target.value })}
+                      minLength={10}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Input
+                    <Label>Description <span className="text-[10px] font-normal text-muted-foreground">(min 10 characters)</span></Label>
+                    <Textarea
                       placeholder="What's happening?"
                       value={form.description}
                       onChange={e => setForm({ ...form, description: e.target.value })}
+                      minLength={10}
+                      rows={4}
+                      className="resize-y min-h-[96px]"
+                      required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Date & Time</Label>
+                      <Label>Date & Time <span className="text-[10px] font-normal text-muted-foreground">(future only)</span></Label>
                       <Input
                         type="datetime-local"
                         value={form.event_date}
+                        min={toDatetimeLocalValue(new Date())}
                         onChange={e => setForm({ ...form, event_date: e.target.value })}
                         required
                       />

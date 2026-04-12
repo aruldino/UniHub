@@ -9,8 +9,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Send, User, BookOpen, Calculator } from 'lucide-react';
+import { Loader2, Save, Send, BookOpen } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+
+/** Table 1: Grade and point values (Faculty of Humanities & Social Sciences, 2014) */
+const GRADE_POINT_SCALE: { range: string; grade: string; point: number }[] = [
+    { range: '85 – 100', grade: 'A+', point: 4.0 },
+    { range: '70 – 84', grade: 'A', point: 4.0 },
+    { range: '65 – 69', grade: 'A-', point: 3.7 },
+    { range: '60 – 64', grade: 'B+', point: 3.3 },
+    { range: '55 – 59', grade: 'B', point: 3.0 },
+    { range: '50 – 54', grade: 'B-', point: 2.7 },
+    { range: '45 – 49', grade: 'C+', point: 2.3 },
+    { range: '40 – 44', grade: 'C', point: 2.0 },
+    { range: '35 – 39', grade: 'C-', point: 1.7 },
+    { range: '30 – 34', grade: 'D+', point: 1.3 },
+    { range: '25 – 29', grade: 'D', point: 1.0 },
+    { range: '00 – 24', grade: 'E', point: 0.0 },
+];
 
 const Grading = () => {
     const { user, role } = useAuth();
@@ -108,16 +124,19 @@ const Grading = () => {
     }, [selectedSubject]);
 
     const calculateGrade = (marks: number) => {
+        if (marks > 100) return { letter: 'A+', point: 4.0 };
         if (marks >= 85) return { letter: 'A+', point: 4.0 };
-        if (marks >= 80) return { letter: 'A', point: 4.0 };
-        if (marks >= 75) return { letter: 'A-', point: 3.7 };
-        if (marks >= 70) return { letter: 'B+', point: 3.3 };
-        if (marks >= 65) return { letter: 'B', point: 3.0 };
-        if (marks >= 60) return { letter: 'B-', point: 2.7 };
-        if (marks >= 55) return { letter: 'C+', point: 2.3 };
-        if (marks >= 50) return { letter: 'C', point: 2.0 };
-        if (marks >= 40) return { letter: 'D', point: 1.0 };
-        return { letter: 'F', point: 0.0 };
+        if (marks >= 70) return { letter: 'A', point: 4.0 };
+        if (marks >= 65) return { letter: 'A-', point: 3.7 };
+        if (marks >= 60) return { letter: 'B+', point: 3.3 };
+        if (marks >= 55) return { letter: 'B', point: 3.0 };
+        if (marks >= 50) return { letter: 'B-', point: 2.7 };
+        if (marks >= 45) return { letter: 'C+', point: 2.3 };
+        if (marks >= 40) return { letter: 'C', point: 2.0 };
+        if (marks >= 35) return { letter: 'C-', point: 1.7 };
+        if (marks >= 30) return { letter: 'D+', point: 1.3 };
+        if (marks >= 25) return { letter: 'D', point: 1.0 };
+        return { letter: 'E', point: 0.0 };
     };
 
     const handleMarksChange = (studentId: string, marks: string) => {
@@ -211,15 +230,35 @@ const Grading = () => {
                             </div>
 
                             <div className="pt-4 border-t space-y-3">
-                                <div className="flex items-center justify-between text-xs font-bold uppercase text-muted-foreground">
-                                    <span>Scale</span>
-                                    <span>Point</span>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                                        Table 1: Grade and point values for students&apos; marks
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground/80 leading-snug">
+                                        Source: Faculty of Humanities &amp; Social Sciences, 2014
+                                    </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                    <div className="flex justify-between bg-muted/30 p-1.5 rounded"><span>85-100 (A+)</span> <span>4.0</span></div>
-                                    <div className="flex justify-between bg-muted/30 p-1.5 rounded"><span>75-84 (A-)</span> <span>3.7</span></div>
-                                    <div className="flex justify-between bg-muted/30 p-1.5 rounded"><span>65-74 (B)</span> <span>3.0</span></div>
-                                    <div className="flex justify-between bg-muted/30 p-1.5 rounded"><span>50-64 (C)</span> <span>2.0</span></div>
+                                <div className="rounded-lg border bg-muted/20 overflow-hidden">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                                <TableHead className="text-xs h-9">Range of marks</TableHead>
+                                                <TableHead className="text-xs h-9 w-14 text-center">Grade</TableHead>
+                                                <TableHead className="text-xs h-9 w-16 text-right">Point value</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {GRADE_POINT_SCALE.map((row) => (
+                                                <TableRow key={row.grade + row.range} className="text-xs">
+                                                    <TableCell className="py-1.5 font-mono tabular-nums">{row.range}</TableCell>
+                                                    <TableCell className="py-1.5 text-center font-bold">{row.grade}</TableCell>
+                                                    <TableCell className="py-1.5 text-right font-mono tabular-nums">
+                                                        {row.point.toFixed(1)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             </div>
                         </CardContent>

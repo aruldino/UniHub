@@ -44,7 +44,7 @@ const Subjects = () => {
         credits: '3',
         deptId: 'none',
         batch: 'none',
-        lecturerId: 'none',
+        lecturerId: 'unassigned',
         desc: ''
     });
 
@@ -124,13 +124,29 @@ const Subjects = () => {
             }
 
             // 3. Admin-only: Fetch all lecturers, departments and batches for creation
+            // Lecturers: query user_roles then profiles. A profiles↔user_roles PostgREST embed
+            // is unreliable here (no direct FK between those tables), which left the dropdown empty.
             if (isAdminRole(role)) {
-                const [lRes, dRes, bRes] = await Promise.all([
-                    supabase.from('profiles').select('user_id, full_name').eq('is_active', true) as any,
+                const [lecturerRolesRes, dRes, bRes] = await Promise.all([
+                    supabase.from('user_roles').select('user_id').eq('role', 'lecturer'),
                     supabase.from('departments' as any).select('id, name, description').order('name') as any,
                     supabase.from('batches' as any).select('name').order('name') as any
                 ]);
-                setLecturers(lRes.data || []);
+                if (lecturerRolesRes.error) throw lecturerRolesRes.error;
+
+                const lecturerIds = [...new Set((lecturerRolesRes.data ?? []).map((r) => r.user_id))];
+
+                let lecturerProfiles: { user_id: string; full_name: string }[] = [];
+                if (lecturerIds.length > 0) {
+                    const { data: lp, error: lpErr } = await supabase
+                        .from('profiles')
+                        .select('user_id, full_name')
+                        .in('user_id', lecturerIds)
+                        .order('full_name', { ascending: true });
+                    if (lpErr) throw lpErr;
+                    lecturerProfiles = (lp ?? []) as { user_id: string; full_name: string }[];
+                }
+                setLecturers(lecturerProfiles);
                 setDepartments(dRes.data || []);
                 setBatches(bRes.data || []);
             }
@@ -165,13 +181,32 @@ const Subjects = () => {
         }
 
         try {
+            // Check if subject already has a lecturer assigned
+            if (form.lecturerId !== 'unassigned' && editingSubject?.lecturer_id) {
+                const { data: existing } = await supabase
+                    .from('subjects')
+                    .select('lecturer_id, profiles(full_name)')
+                    .eq('id', editingSubject.id)
+                    .single();
+                
+                if (existing?.lecturer_id && existing.lecturer_id !== form.lecturerId) {
+                    toast({ 
+                        title: 'Subject Already Assigned', 
+                        description: `This subject is already assigned to ${existing.profiles?.full_name || 'another lecturer'}. Please unassign first or select a different subject.`, 
+                        variant: 'destructive' 
+                    });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+
             const data = {
                 name: form.name,
                 code: form.code,
                 credits: parseInt(form.credits),
                 department_id: form.deptId === 'none' ? null : form.deptId,
                 batch: form.batch === 'none' ? null : form.batch,
-                lecturer_id: form.lecturerId === 'none' ? null : form.lecturerId,
+                lecturer_id: form.lecturerId === 'unassigned' ? null : form.lecturerId,
                 description: form.desc
             };
 
@@ -187,7 +222,7 @@ const Subjects = () => {
 
             setDialogOpen(false);
             setEditingSubject(null);
-            setForm({ name: '', code: '', credits: '3', deptId: 'none', batch: 'none', lecturerId: 'none', desc: '' });
+            setForm({ name: '', code: '', credits: '3', deptId: 'none', batch: 'none', lecturerId: 'unassigned', desc: '' });
             fetchData();
         } catch (error: any) {
             toast({ title: 'Failed', description: error.message, variant: 'destructive' });
@@ -216,7 +251,7 @@ const Subjects = () => {
             credits: subject.credits.toString(),
             deptId: subject.department_id || 'none',
             batch: subject.batch || '',
-            lecturerId: subject.lecturer_id || 'none',
+            lecturerId: subject.lecturer_id || 'unassigned',
             desc: subject.description || ''
         });
         setDialogOpen(true);
@@ -230,7 +265,7 @@ const Subjects = () => {
             credits: '3',
             deptId: selectedDeptId === 'all' ? 'none' : selectedDeptId === 'general' ? 'none' : selectedDeptId,
             batch: '',
-            lecturerId: 'none',
+            lecturerId: 'unassigned',
             desc: ''
         });
         setDialogOpen(true);
@@ -317,7 +352,7 @@ const Subjects = () => {
                                         <div className="space-y-2">
                                             <Label>Department</Label>
                                             <Select value={form.deptId} onValueChange={v => setForm({ ...form, deptId: v })}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
+<SelectTrigger><SelectValue placeholder="Select a lecturer" /></SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="none">N/A</SelectItem>
                                                     {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
@@ -337,10 +372,28 @@ const Subjects = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Assign Lecturer</Label>
-                                        <Select value={form.lecturerId} onValueChange={v => setForm({ ...form, lecturerId: v })}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <Select value={form.lecturerId} onValueChange={async (v) => {
+                                            if (v !== 'unassigned' && editingSubject?.lecturer_id && editingSubject.lecturer_id !== v) {
+                                                const { data: existing } = await supabase
+                                                    .from('subjects')
+                                                    .select('lecturer_id, profiles(full_name)')
+                                                    .eq('id', editingSubject.id)
+                                                    .single();
+                                                
+                                                if (existing?.lecturer_id) {
+                                                    toast({ 
+                                                        title: 'Cannot Assign', 
+                                                        description: `This subject is already assigned to ${existing.profiles?.full_name || 'another lecturer'}. Please unassign first.`, 
+                                                        variant: 'destructive' 
+                                                    });
+                                                    return;
+                                                }
+                                            }
+                                            setForm({ ...form, lecturerId: v });
+                                        }}>
+                                            <SelectTrigger><SelectValue placeholder="Select a lecturer" /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="none">Unassigned</SelectItem>
+                                                <SelectItem value="unassigned">Unassigned</SelectItem>
                                                 {lecturers.map(l => <SelectItem key={l.user_id} value={l.user_id}>{l.full_name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>

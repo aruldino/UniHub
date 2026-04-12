@@ -1,4 +1,4 @@
--- DUMMY SEED DATA FOR SAMS (Academic & Administrative)
+-- DUMMY SEED DATA (Academic & Administrative)
 -- Run this in your Supabase SQL Editor to populate the database with sample data.
 
 -- 1. CLEANUP (Optional - Uncomment if you want to clear existing data first)

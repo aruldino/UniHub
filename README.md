@@ -1,4 +1,4 @@
-# SAMS - Smart Academic Management System
+# UniHub — Academic Portal
 
 A comprehensive academic management system for students, lecturers, and administrators.
 

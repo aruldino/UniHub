@@ -1,4 +1,4 @@
--- GRADING & GPA SYSTEM FOR SAMS
+-- GRADING & GPA SYSTEM
 
 -- 1. Create Grades Table
 CREATE TABLE IF NOT EXISTS public.grades (

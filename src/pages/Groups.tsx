@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Plus, MessageSquare, UserPlus, MoreVertical, Send,
   Search, ArrowLeft, Trash2, UserCheck,
-  Users, ShieldAlert, Heart, Loader2, Paperclip, FileArchive, File as FileIcon, X,
+  Users, ShieldAlert, Heart, Loader2, Paperclip, FileArchive, File as FileIcon, X, Check,
   Crown, LogOut, UserMinus,
 } from 'lucide-react';
 import {
@@ -44,6 +44,9 @@ import {
   fetchAllGroups,
   sendJoinRequest,
   cancelJoinRequest,
+  fetchPendingRequests,
+  approveJoinRequest,
+  denyJoinRequest,
 } from '@/mvc/services/socialHubService';
 
 /** Max attachment size (keep in sync with storage.buckets file_size_limit for `chat-media`). */
@@ -142,6 +145,7 @@ const Groups = () => {
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [groupMemberships, setGroupMemberships] = useState<Record<string, string>>({});
   const [joinRequests, setJoinRequests] = useState<Record<string, string>>({});
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
   // Direct Messages State
   const [contacts, setContacts] = useState<any[]>([]);
@@ -268,6 +272,13 @@ const Groups = () => {
         void fetchBasics();
         const c = selectedChatRef.current;
         if (c?.id) void fetchMessages(c);
+      })
+      .on('postgres_changes', { event: '*', table: 'group_join_requests', schema: 'public' }, () => {
+        void fetchBasics();
+        const c = selectedChatRef.current;
+        if (c?.id && isGroupAdmin) {
+          fetchPendingRequests(c.id).then(setPendingRequests).catch(console.error);
+        }
       })
       .subscribe();
 
@@ -489,6 +500,88 @@ const Groups = () => {
     selectedChat?.id && user && members.some((m: any) => m.user_id === user.id && m.role === 'admin')
   );
   const adminCount = members.filter((m: any) => m.role === 'admin').length;
+
+  // Fetch pending requests when viewing a group as admin
+  useEffect(() => {
+    if (!selectedChat?.id) {
+      setPendingRequests([]);
+      return;
+    }
+    const checkAdmin = () => {
+      const isAdmin = user && members.some((m: any) => m.user_id === user.id && m.role === 'admin');
+      if (isAdmin) {
+        fetchPendingRequests(selectedChat.id).then(setPendingRequests).catch(console.error);
+      } else {
+        setPendingRequests([]);
+      }
+    };
+    checkAdmin();
+  }, [selectedChat?.id, members, user]);
+
+  const handleApproveRequest = async (request: any) => {
+    console.log('[handleApproveRequest] Starting approval for request:', request);
+    try {
+      await approveJoinRequest(request.id, request.group_id, request.user_id);
+      console.log('[handleApproveRequest] Approve succeeded, creating notification');
+      
+      const notificationPayload = {
+        user_id: request.user_id,
+        type: 'group_request_approved',
+        title: 'Join Request Approved',
+        message: `Your request to join "${selectedChat?.name || 'the group'}" has been approved.`,
+        link: '/groups',
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('[handleApproveRequest] Inserting notification:', notificationPayload);
+      const { error: notifError } = await supabase.from('notifications').insert([notificationPayload]);
+      
+      if (notifError) {
+        console.error('[handleApproveRequest] Notification error:', notifError);
+      } else {
+        console.log('[handleApproveRequest] Notification created successfully');
+      }
+      toast({ title: 'Request approved', description: 'User has been added to the group.' });
+      setPendingRequests(prev => prev.filter(r => r.id !== request.id));
+      fetchBasics();
+    } catch (error: any) {
+      console.error('[handleApproveRequest] Error:', error);
+      toast({ title: 'Approval failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDenyRequest = async (request: any) => {
+    console.log('[handleDenyRequest] Starting deny for request:', request);
+    try {
+      await denyJoinRequest(request.id);
+      console.log('[handleDenyRequest] Deny succeeded, creating notification');
+      
+      const notificationPayload = {
+        user_id: request.user_id,
+        type: 'group_request_rejected',
+        title: 'Join Request Denied',
+        message: `Your request to join "${selectedChat?.name || 'the group'}" was denied.`,
+        link: '/groups',
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('[handleDenyRequest] Inserting notification:', notificationPayload);
+      const { error: notifError } = await supabase.from('notifications').insert([notificationPayload]);
+      
+      if (notifError) {
+        console.error('[handleDenyRequest] Notification error:', notifError);
+      } else {
+        console.log('[handleDenyRequest] Notification created successfully');
+      }
+      toast({ title: 'Request denied' });
+      setPendingRequests(prev => prev.filter(r => r.id !== request.id));
+    } catch (error: any) {
+      console.error('[handleDenyRequest] Error:', error);
+      toast({ title: 'Deny failed', description: error.message, variant: 'destructive' });
+    }
+  };
 
   const memberUserIds = new Set(members.map((m: any) => m.user_id));
 
@@ -1094,6 +1187,34 @@ const Groups = () => {
               )}
             </div>
             <div className="flex flex-1 flex-col overflow-hidden p-4">
+              {pendingRequests.length > 0 && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+                  <h4 className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-yellow-700">
+                    <UserCheck className="h-3 w-3" /> Join Requests ({pendingRequests.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {pendingRequests.map(req => (
+                      <div key={req.id} className="flex items-center gap-2 p-2 bg-white rounded-lg">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={req.profiles?.avatar_url} />
+                          <AvatarFallback>{req.profiles?.full_name?.slice(0, 1) || '?'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold truncate">{req.profiles?.full_name || 'User'}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="sm" className="h-6 px-2 text-[10px] bg-green-600 hover:bg-green-700" onClick={() => handleApproveRequest(req)}>
+                            <Check className="h-3 w-3 mr-1" /> Accept
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleDenyRequest(req)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <h4 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary">
                 <Users className="h-3 w-3" /> Members ({members.length})
               </h4>

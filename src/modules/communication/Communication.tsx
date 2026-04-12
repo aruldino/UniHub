@@ -250,16 +250,6 @@ const Communication = () => {
                                                 required
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Content</Label>
-                                            <Input
-                                                className="min-h-[100px]"
-                                                placeholder="Write your announcement here..."
-                                                value={annForm.content}
-                                                onChange={e => setAnnForm({ ...annForm, content: e.target.value })}
-                                                required
-                                            />
-                                        </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label>Target Audience</Label>

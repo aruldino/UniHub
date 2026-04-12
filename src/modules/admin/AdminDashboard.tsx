@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Users, Building2, BookOpen, Trophy, Clock, LogIn, TrendingUp, Award,
-  CalendarRange, Calendar, Layers, UserPlus, GraduationCap, BarChart3, Settings, Shield,
+  CalendarRange, Calendar, Layers, UserPlus, GraduationCap, Settings, Shield,
 } from 'lucide-react';
 
 
@@ -69,7 +69,7 @@ const AdminDashboard = () => {
                             { to: '/admin/batches', label: 'Batches', icon: Layers },
                             { to: '/admin/enrollments', label: 'Enrollments', icon: UserPlus },
                             { to: '/admin/users', label: 'Users', icon: Settings },
-                            { to: '/analytics', label: 'Reports', icon: BarChart3 },
+                            
                             { to: '/admin/system', label: 'System', icon: Shield },
                         ].map(({ to, label, icon: Icon }) => (
                             <Link

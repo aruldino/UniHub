@@ -9,7 +9,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Bell, MessageSquare, Check, X, ShieldAlert, GraduationCap } from 'lucide-react';
+import { Bell, MessageSquare, Check, X, ShieldAlert, GraduationCap, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
@@ -32,6 +32,7 @@ const NotificationCenter = () => {
     const fetchNotifications = async () => {
         if (!user) return;
         try {
+            console.log('[fetchNotifications] Fetching for user:', user.id);
             const { data, error } = await supabase
                 .from('notifications')
                 .select(`
@@ -47,6 +48,7 @@ const NotificationCenter = () => {
                 return;
             }
 
+            console.log('[fetchNotifications] Got notifications:', data?.length, data);
             setNotifications(data || []);
             setUnreadCount(data?.filter((n: any) => !n.is_read).length || 0);
         } catch (err: any) {
@@ -69,7 +71,8 @@ const NotificationCenter = () => {
                 schema: 'public',
                 filter: `user_id=eq.${user.id}`
             }, (payload) => {
-                console.log('[NotificationCenter] New Change Received:', payload.eventType);
+                console.log('[NotificationCenter] Change received:', payload.eventType, payload);
+                console.log('[NotificationCenter] New notification type:', payload.new?.type);
 
                 // Show pop-up toast only on NEW notifications
                 if (payload.eventType === 'INSERT') {
@@ -81,6 +84,7 @@ const NotificationCenter = () => {
                     const shouldSuppress = isSocialHub && (newNotif.type === 'message' || newNotif.type === 'chat_request');
 
                     if (!shouldSuppress) {
+                        console.log('[NotificationCenter] Showing toast for:', newNotif.title);
                         toast({
                             title: newNotif.title,
                             description: newNotif.message,
@@ -123,6 +127,9 @@ const NotificationCenter = () => {
             case 'chat_request': return <MessageSquare className="h-4 w-4 text-primary" />;
             case 'grade_posted': return <GraduationCap className="h-4 w-4 text-green-500" />;
             case 'announcement': return <Bell className="h-4 w-4 text-primary" />;
+            case 'group_join_request': return <Users className="h-4 w-4 text-primary" />;
+            case 'group_request_approved': return <Check className="h-4 w-4 text-green-500" />;
+            case 'group_request_rejected': return <X className="h-4 w-4 text-red-500" />;
             default: return <ShieldAlert className="h-4 w-4 text-muted-foreground" />;
         }
     };

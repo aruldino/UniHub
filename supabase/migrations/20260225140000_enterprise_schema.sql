@@ -1,4 +1,4 @@
--- ENTERPRISE SCHEMA FOR SAMS (Smart Academic Management System)
+-- ENTERPRISE SCHEMA (Smart Academic Management System)
 
 -- 1. Departments Table
 CREATE TABLE IF NOT EXISTS public.departments (

@@ -10,6 +10,21 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
+const BATCH_NAME_MIN = 5;
+/** Letters, numbers, spaces, hyphen only — no other symbols. */
+const BATCH_NAME_PATTERN = /^[\p{L}\p{N}\s\-]+$/u;
+
+function validateBatchName(name: string): string | null {
+    const n = name.trim();
+    if (n.length < BATCH_NAME_MIN) {
+        return `Batch name must be at least ${BATCH_NAME_MIN} characters.`;
+    }
+    if (!BATCH_NAME_PATTERN.test(n)) {
+        return 'Batch name may only contain letters, numbers, spaces, and hyphens (no other special characters).';
+    }
+    return null;
+}
+
 const Batches = () => {
     const [batches, setBatches] = useState<any[]>([]);
     const [search, setSearch] = useState('');
@@ -55,9 +70,9 @@ const Batches = () => {
         e.preventDefault();
         setIsCreating(true);
 
-        // Validate batch name - min 10 characters
-        if (newName.length < 10) {
-            toast({ title: 'Invalid batch name', description: 'Batch name must be at least 10 characters.', variant: 'destructive' });
+        const nameErr = validateBatchName(newName);
+        if (nameErr) {
+            toast({ title: 'Invalid batch name', description: nameErr, variant: 'destructive' });
             setIsCreating(false);
             return;
         }
@@ -79,7 +94,7 @@ const Batches = () => {
 
         try {
             const data = {
-                name: newName,
+                name: newName.trim(),
                 description: newDesc,
                 academic_year: newYear
             };
@@ -157,8 +172,15 @@ const Batches = () => {
                             <form onSubmit={handleSaveBatch}>
                                 <div className="grid gap-4 py-4">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="name">Batch Name <span className="text-[10px] text-muted-foreground">(min 10 chars)</span></Label>
-                                        <Input id="name" placeholder="e.g. Computer Science 2024-A" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={50} required />
+                                        <Label htmlFor="name">Batch Name <span className="text-[10px] text-muted-foreground">(letters, numbers, spaces, hyphen; min {BATCH_NAME_MIN} chars)</span></Label>
+                                        <Input
+                                            id="name"
+                                            placeholder="e.g. Computer Science 2024-A"
+                                            value={newName}
+                                            onChange={(e) => setNewName(e.target.value.replace(/[^\p{L}\p{N}\s\-]/gu, ''))}
+                                            maxLength={50}
+                                            required
+                                        />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="year">Academic Year <span className="text-[10px] text-muted-foreground">(2024/25)</span></Label>
