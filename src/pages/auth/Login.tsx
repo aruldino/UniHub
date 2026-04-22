@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { GraduationCap, Loader2, Mail, Lock, ArrowRight, Sparkles, CheckCircle, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Loader2, Mail, Lock, ArrowRight, Sparkles, CheckCircle, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { isSupabaseConfigured } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -118,6 +119,20 @@ const Login = () => {
             <Sparkles className="h-3 w-3 text-[#2e406a]" />
           </p>
         </div>
+
+        {!isSupabaseConfigured && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-amber-900 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
+              <div className="text-sm">
+                <p className="font-semibold">Supabase is not configured locally</p>
+                <p className="mt-1 text-amber-800">
+                  Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env` to enable sign-in and database features.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Login Card */}
         <Card className="relative border border-slate-200 shadow-2xl bg-white/80 backdrop-blur-xl overflow-hidden group">
