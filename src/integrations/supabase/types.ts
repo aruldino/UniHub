@@ -478,36 +478,27 @@ export type Database = {
           day_of_week: number
           end_time: string
           id: string
-          department_id: string | null
           room: string | null
-          batch: string | null
           start_time: string
           subject_id: string
-          updated_at: string | null
         }
         Insert: {
           created_at?: string
           day_of_week: number
           end_time: string
           id?: string
-          department_id?: string | null
           room?: string | null
-          batch?: string | null
           start_time: string
           subject_id: string
-          updated_at?: string | null
         }
         Update: {
           created_at?: string
           day_of_week?: number
           end_time?: string
           id?: string
-          department_id?: string | null
           room?: string | null
-          batch?: string | null
           start_time?: string
           subject_id?: string
-          updated_at?: string | null
         }
         Relationships: [
           {

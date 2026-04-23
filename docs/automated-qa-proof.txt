@@ -1,0 +1,59 @@
+Automated QA Testing Proof
+Date: 2026-04-22
+Project: Aruldino
+
+STATUS
+- Automated QA testing is successful.
+
+LIVE RUN EVIDENCE
+- Command run: npm run test
+- Tool: Vitest (vitest run)
+- Result:
+  - Test Files: 2 passed
+  - Tests: 5 passed
+  - Failed: 0
+  - Duration: ~3.37s
+
+TESTING TOOLS USED
+1) Vitest
+- Purpose: Automated test runner and assertions.
+- Proof files:
+  - vitest.config.ts
+  - package.json (scripts: test, test:watch)
+
+2) React Testing Library
+- Purpose: Component-level behavior and user journey testing.
+- Proof file:
+  - src/components/ContactModal.test.tsx
+
+3) JSDOM Environment
+- Purpose: Browser-like DOM environment for UI tests.
+- Proof files:
+  - vitest.config.ts (environment: jsdom)
+  - src/test/setup.ts
+
+MODULES / COMPONENTS TESTED
+1) ContactModal component
+- Source:
+  - src/components/ContactModal.tsx
+- Test suite:
+  - src/components/ContactModal.test.tsx
+- Covered user journeys:
+  - Validation failure when message is shorter than 10 characters.
+  - Phone input normalization to numeric-only and 10 digits max.
+  - Successful inquiry submission path.
+  - Failed inquiry submission path with error toast.
+
+2) Baseline smoke test
+- File:
+  - src/test/example.test.ts
+- Purpose:
+  - Confirms test runner setup is functioning.
+
+ADDITIONAL EVIDENCE DOCUMENTATION
+- docs/assessment-evidence.md
+- README.md (links to assessment evidence)
+
+NOTE ABOUT STDERR OUTPUT
+- The "Error submitting inquiry: Error: network" line appears during the intentional negative test case.
+- This is expected behavior for failure-path testing and does not indicate a failed test run.

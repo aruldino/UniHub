@@ -18,6 +18,10 @@ A comprehensive academic management system for students, lecturers, and administ
 - **Backend/Auth**: Supabase
 - **State Management**: TanStack Query (React Query)
 
+## Assessment Evidence
+
+- Tooling evidence checklist for student submissions: `docs/assessment-evidence.md`
+
 ## Getting Started
 
 ### Prerequisites

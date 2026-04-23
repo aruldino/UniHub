@@ -76,7 +76,7 @@ const UserManagement = () => {
                 enrolledByStudent.set(sid, list);
             });
 
-            let combined = profiles.map((p: any) => {
+            const combined = profiles.map((p: any) => {
                 const userRole = roles?.find((r: any) => r.user_id === p.user_id)?.role || 'student';
                 return {
                     ...p,

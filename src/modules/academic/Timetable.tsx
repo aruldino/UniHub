@@ -71,7 +71,7 @@ const Timetable = () => {
                 // For now, let's let them see the whole grid but only edit theirs.
             } else if (role === 'admin' && selectedDept !== 'none') {
                 query = (query as any).eq('department_id', selectedDept);
-                if (selectedBatch && selectedBatch !== 'none') query = (query as any).eq('batch', selectedBatch);
+                if (selectedBatch) query = (query as any).eq('batch', selectedBatch);
             }
 
             const { data: ttData } = await (query as any);
@@ -117,7 +117,6 @@ const Timetable = () => {
         e.preventDefault();
         setIsSaving(true);
         const currentDeptId = form.department_id === 'none' ? null : form.department_id;
-        const currentBatch = form.batch === 'none' ? null : form.batch;
 
         const payload = {
             subject_id: form.subject_id,
@@ -126,7 +125,7 @@ const Timetable = () => {
             end_time: form.end_time,
             room: form.room,
             department_id: currentDeptId,
-            batch: currentBatch
+            batch: form.batch || null
         };
 
         try {
@@ -156,21 +155,16 @@ const Timetable = () => {
                 .filter('end_time', 'gt', form.start_time) as any);
 
             let conflictMsg = error.message;
-            const errorMessage = (error.message || '').toLowerCase();
-            const isRlsError = errorMessage.includes('row-level security') || errorMessage.includes('violates row-level security') || error.code === '42501';
-
-            if (isRlsError) {
-                conflictMsg = 'You do not have permission to schedule this lecture. Make sure the subject is assigned to your lecturer account.';
-            } else if (error.code === '23P01' || errorMessage.includes('exclusion')) {
+            if (error.code === '23P01' || error.message.toLowerCase().includes('exclusion')) {
                 const roomConflict = conflicts?.find((c: any) => c.id !== selectedSlot?.id && c.room && c.room.toLowerCase() === form.room.toLowerCase());
                 const batchConflict = conflicts?.find((c: any) =>
-                    c.id !== selectedSlot?.id && c.batch && c.batch === currentBatch && c.department_id === currentDeptId
+                    c.id !== selectedSlot?.id && c.batch && c.batch === form.batch && c.department_id === currentDeptId
                 );
 
                 if (roomConflict) {
                     conflictMsg = `Room Conflict: "${form.room}" is already booked by ${roomConflict.subjects?.name} at this time.`;
                 } else if (batchConflict) {
-                    conflictMsg = `Batch Conflict: ${currentBatch} group already has ${batchConflict.subjects?.name} scheduled.`;
+                    conflictMsg = `Batch Conflict: ${form.batch} group already has ${batchConflict.subjects?.name} scheduled.`;
                 } else {
                     conflictMsg = "Exclusion Conflict: Overlapping time found for the same room or class group.";
                 }

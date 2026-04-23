@@ -144,6 +144,28 @@ const Profile = () => {
         setLoading(true);
 
         try {
+            const trimmedFullName = fullName.trim();
+            const trimmedEmail = email.trim().toLowerCase();
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!trimmedFullName) {
+                toast({
+                    title: 'Invalid name',
+                    description: 'Please enter your full name.',
+                    variant: 'destructive'
+                });
+                return;
+            }
+
+            if (!emailPattern.test(trimmedEmail)) {
+                toast({
+                    title: 'Invalid email',
+                    description: 'Please enter a valid email address.',
+                    variant: 'destructive'
+                });
+                return;
+            }
+
             const normalizedPhone = phone.replace(/\D/g, '');
             if (normalizedPhone.length > 0 && !/^\d{10}$/.test(normalizedPhone)) {
                 toast({
@@ -155,8 +177,14 @@ const Profile = () => {
             }
 
             const avatarUrl = await uploadAvatarIfNeeded();
+            if (user?.email && trimmedEmail !== user.email.toLowerCase()) {
+                const { error: authEmailError } = await supabase.auth.updateUser({ email: trimmedEmail });
+                if (authEmailError) throw authEmailError;
+            }
+
             const updates: any = {
-                full_name: fullName,
+                full_name: trimmedFullName,
+                email: trimmedEmail,
                 bio,
                 phone: normalizedPhone,
                 address,
@@ -164,12 +192,10 @@ const Profile = () => {
                 updated_at: new Date().toISOString(),
             };
 
-            if (role === 'admin') updates.email = email;
-
             const { error } = await supabase.from('profiles').update(updates).eq('user_id', user?.id);
             if (error) throw error;
 
-            toast({ title: 'Profile Updated', description: 'Your changes have been saved.' });
+            toast({ title: 'Profile Updated', description: 'Your account changes have been saved.' });
             setTimeout(async () => { await fetchProfile(); }, 500);
             setAvatarFile(null);
             if (avatarPreview) {
@@ -184,7 +210,7 @@ const Profile = () => {
         }
     };
 
-    const isEmailDisabled = role !== 'admin' || !isEditing;
+    const isEmailDisabled = !isEditing;
 
     return (
         <DashboardLayout>
