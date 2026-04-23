@@ -37,7 +37,6 @@ const ProtectedRoute = ({ children, allowedRoles, requiredPermission }: Protecte
       <div className="flex flex-col items-center justify-center h-screen space-y-4">
         <h1 className="text-4xl font-bold text-destructive">403</h1>
         <p className="text-xl text-muted-foreground">Access Denied: Insufficient Permissions.</p>
-        <Navigate to="/dashboard" replace />
       </div>
     );
   }
