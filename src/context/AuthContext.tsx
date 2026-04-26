@@ -30,6 +30,8 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const isPlaywrightTest = import.meta.env.VITE_PLAYWRIGHT_TEST === 'true';
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -50,6 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    if (isPlaywrightTest) {
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
@@ -91,6 +98,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    if (isPlaywrightTest) {
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setRole(null);
+      setPermissions([]);
+      window.location.assign('/login');
+      return;
+    }
+
     try {
       await supabase.auth.signOut();
     } catch (error) {
