@@ -1,4 +1,12 @@
+// @ts-ignore: Deno remote URL import is valid for Supabase Edge Functions runtime.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+declare const Deno: {
+  env: {
+    get: (name: string) => string | undefined;
+  };
+  serve: (handler: (req: Request) => Response | Promise<Response>) => void;
+};
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",

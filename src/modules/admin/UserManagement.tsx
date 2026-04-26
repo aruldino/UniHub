@@ -101,27 +101,59 @@ const UserManagement = () => {
         if (user) fetchData();
     }, [user, role]);
 
+    // Reset form when dialog opens or closes
+    useEffect(() => {
+        setForm({
+            name: '',
+            email: '',
+            password: '',
+            role: 'student' as AppRole,
+            deptId: 'none',
+            batch: '',
+            status: 'active'
+        });
+    }, [dialogOpen]);
+
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (form.role === 'student' && !form.batch.trim()) {
             toast({ title: 'Batch required', description: 'Select a batch for student accounts.', variant: 'destructive' });
             return;
         }
+        
+        // Check if email already exists
+        if (users.some(u => u.email?.toLowerCase() === form.email.toLowerCase())) {
+            toast({ title: 'Email already exists', description: `An account with email "${form.email}" already exists. Please use a different email.`, variant: 'destructive' });
+            return;
+        }
+        
         setIsAddingUser(true);
         try {
             // Use Edge Function + Admin API so the new user session is NOT created in this browser
             // (signUp() would log you in as the new account and kick the admin out).
-            const { data, error } = await supabase.functions.invoke('create-academy-user', {
-                body: {
-                    email: form.email,
-                    password: form.password,
-                    full_name: form.name,
-                    role: form.role,
-                    department_id: form.deptId !== 'none' ? form.deptId : null,
-                    batch: form.batch.trim() || null,
-                    status: form.status,
-                },
-            });
+            const payload = {
+                email: form.email,
+                password: form.password,
+                full_name: form.name,
+                role: form.role,
+                department_id: form.deptId !== 'none' ? form.deptId : null,
+                batch: form.batch.trim() || null,
+                status: form.status,
+            };
+
+            const functionNames = ['create-academy-user', 'create-academic-user', 'create-acadamic-user'];
+            let data: unknown = null;
+            let error: Error | null = null;
+
+            for (const fnName of functionNames) {
+                const res = await supabase.functions.invoke(fnName, { body: payload });
+                if (!res.error) {
+                    data = res.data;
+                    error = null;
+                    break;
+                }
+                error = res.error;
+            }
 
             if (error) throw new Error(error.message);
             if (data && typeof data === 'object' && data !== null && 'error' in data) {
@@ -134,7 +166,19 @@ const UserManagement = () => {
 
             setTimeout(() => fetchData(), 500);
         } catch (error: any) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            const rawMessage = String(error?.message ?? 'Unknown error');
+            const lower = rawMessage.toLowerCase();
+            let description = rawMessage;
+            
+            if (lower.includes('failed to send a request to the edge function') ||
+                lower.includes('not_found') ||
+                lower.includes('requested function was not found')) {
+                description = 'Edge function create-academy-user is missing in this Supabase project. Deploy it in Supabase Dashboard (Edge Functions) and try again.';
+            } else if (lower.includes('user_already_exists') || lower.includes('already exists')) {
+                description = `Email "${form.email}" is already registered. Please use a different email address.`;
+            }
+            
+            toast({ title: 'Error', description, variant: 'destructive' });
         } finally {
             setIsAddingUser(false);
         }
