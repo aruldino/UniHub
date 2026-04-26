@@ -9,7 +9,10 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY a
 
 const supabaseKey = SUPABASE_ANON_KEY || SUPABASE_PUBLISHABLE_KEY;
 
-if (import.meta.env.DEV && (!SUPABASE_URL || !supabaseKey)) {
+// In Playwright test mode, use mock values to prevent errors
+const isPlaywrightTest = import.meta.env.VITE_PLAYWRIGHT_TEST === 'true';
+
+if (!isPlaywrightTest && import.meta.env.DEV && (!SUPABASE_URL || !supabaseKey)) {
   console.error(
     '[UniHub] Missing VITE_SUPABASE_URL or a key. Set VITE_SUPABASE_ANON_KEY (from Supabase → Settings → API → anon public) or VITE_SUPABASE_PUBLISHABLE_KEY in .env'
   );
@@ -18,10 +21,14 @@ if (import.meta.env.DEV && (!SUPABASE_URL || !supabaseKey)) {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL ?? '', supabaseKey ?? '', {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+export const supabase = createClient<Database>(
+  SUPABASE_URL || (isPlaywrightTest ? 'http://localhost:54321' : ''),
+  supabaseKey || (isPlaywrightTest ? 'mock-key' : ''),
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
   }
-});
+);

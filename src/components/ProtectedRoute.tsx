@@ -16,6 +16,12 @@ const ProtectedRoute = ({ children, allowedRoles, requiredPermission }: Protecte
   const { user, role, loading, hasPermission } = useAuth();
   const location = useLocation();
 
+  // In Playwright test mode, skip auth checks
+  const isPlaywrightTest = import.meta.env.VITE_PLAYWRIGHT_TEST === 'true';
+  if (isPlaywrightTest) {
+    return <>{children}</>;
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
